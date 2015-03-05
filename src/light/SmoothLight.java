@@ -1,3 +1,5 @@
+package light;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
@@ -7,6 +9,10 @@ import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
+
+import main.Debug;
+import main.LightingTest;
+import utils.Vec2D;
 
 public class SmoothLight {
 	/** A Polygon object which we will re-use for each shadow geometry. */
@@ -54,7 +60,7 @@ public class SmoothLight {
 	 *            the list of entities to take into account when drawing shadows
 	 * @throws Exception
 	 */
-	protected void draw(final Graphics2D g, final List<Polygon> entities) {
+	public void draw(final Graphics2D g, final List<Polygon> entities) {
 		// old Paint object for resetting it later
 		final Paint oldPaint = g.getPaint();
 		// amount to extrude our shadow polygon by

@@ -1,3 +1,5 @@
+package main;
+
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
@@ -15,6 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JFrame;
+
+import light.Light;
+import light.SmoothLight;
+import utils.Vec2D;
 
 /**
  * @author Matt DesLauriers, mattdesl

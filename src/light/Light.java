@@ -1,9 +1,13 @@
+package light;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.MultipleGradientPaint.CycleMethod;
 import java.awt.RadialGradientPaint;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+
+import utils.Vec2D;
 
 public class Light {
 	static final Color NULL_COLOR = new Color(0, 0, 0, 0);
