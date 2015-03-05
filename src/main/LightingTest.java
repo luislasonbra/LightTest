@@ -6,13 +6,14 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
-import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.Transparency;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferStrategy;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,11 +21,9 @@ import javax.swing.JFrame;
 
 import light.Light;
 import light.SmoothLight;
+import utils.GraphicsUtils;
 import utils.Vec2D;
 
-/**
- * @author Matt DesLauriers, mattdesl
- */
 public class LightingTest {
 
 	public static void main(final String[] args) {
@@ -47,14 +46,14 @@ public class LightingTest {
 	/** The buffer strategy used for smooth active rendering. */
 	protected BufferStrategy strategy;
 
+	protected BufferedImage lightmap = GraphicsUtils.createImage(getWidth(),
+			getHeight(), Transparency.TRANSLUCENT);
+
 	/** True if the game loop is running. */
 	protected boolean running;
 
 	/** The current frames per second, used for debugging performance. */
 	protected int fps = 60;
-
-	/** Timer used for adding entities every N seconds. */
-	private float tickTimer;
 
 	/** A list of entities to render. */
 	protected List<Polygon> entities = new ArrayList<>();
@@ -67,7 +66,8 @@ public class LightingTest {
 	protected JFrame frame = new JFrame("Shooter Game");
 
 	/**
-	 * Constructs a new Game object; run() should be called to start the rendering.
+	 * Constructs a new Game object; run() should be called to start the
+	 * rendering.
 	 */
 	public LightingTest() {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -130,7 +130,8 @@ public class LightingTest {
 			// pretty standard buffer strategy game loop
 			do {
 				do {
-					final Graphics2D g = (Graphics2D) strategy.getDrawGraphics();
+					final Graphics2D g = (Graphics2D) strategy
+							.getDrawGraphics();
 					// clear screen
 					g.setColor(Color.white);
 					g.clearRect(0, 0, width, height);
@@ -158,10 +159,16 @@ public class LightingTest {
 	/** Called on first run to initialize the game and any resources. */
 	protected void init() {
 		// add the first entity
-		entities.add(new Polygon(new int[] { 125, 145, 145, 125 }, new int[] { 225, 225, 245, 245 }, 4));
-		entities.add(new Polygon(new int[] { 225, 245, 245, 225 }, new int[] { 245, 245, 275, 285 }, 4));
-		lights.add(new SmoothLight(new Light(new Color(255, 200, 0, 200), new Vec2D(0, 0), 200), 5, 5, 5, 50));
-		lights.add(new SmoothLight(new Light(new Color(0, 255, 255, 200), new Vec2D(200, 200), 200), 5, 10, 5, 50));
+		entities.add(new Polygon(new int[] { 125, 145, 145, 125 }, new int[] {
+				225, 225, 245, 245 }, 4));
+		entities.add(new Polygon(new int[] { 225, 245, 245, 225 }, new int[] {
+				245, 245, 275, 285 }, 4));
+		entities.add(new Polygon(new int[] { 200, 220, 210, 190 }, new int[] {
+				200, 190, 220, 200 }, 4));
+		lights.add(new SmoothLight(new Light(new Color(0, 255, 255, 200),
+				new Vec2D(200, 200), 200), 3, 15, 3, 90));
+		lights.add(new SmoothLight(new Light(new Color(255, 200, 0, 200),
+				new Vec2D(250, 200), 200), 3, 15, 3, 90));
 	}
 
 	/** Updates the game's entities. */
@@ -171,17 +178,22 @@ public class LightingTest {
 
 	/** Called to render the frame. */
 	protected void render(final Graphics2D g) {
-		// we'll use nice quality interpolation
-		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		g.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		GraphicsUtils.prettyGraphics(g);
 
 		g.setColor(Color.WHITE);
 		g.drawString("FPS: " + fps, 10, 20);
+
+		final Graphics2D lightGraphics = lightmap.createGraphics();
+		lightGraphics.setBackground(new Color(255, 255, 255, 0));
+		lightGraphics.clearRect(0, 0, width, height);
+
 		// render the shadows first
 		for (final SmoothLight l : lights) {
-			l.draw(g, entities);
+			l.draw(lightGraphics, entities);
 		}
+		lightGraphics.dispose();
+		GraphicsUtils.glowFilter(lightmap, 0.2f);
+		g.drawImage(lightmap, null, 0, 0);
 
 		// render each entity
 		for (int i = 0; i < entities.size(); i++) {

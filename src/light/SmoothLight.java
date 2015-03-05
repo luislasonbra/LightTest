@@ -33,7 +33,8 @@ public class SmoothLight {
 	 * @param angle
 	 *            the angle between each layer
 	 */
-	public SmoothLight(final Light center, final int circles, final int oneLayerProjection, final int layers, final int angle) {
+	public SmoothLight(final Light center, final int circles,
+			final int oneLayerProjection, final int layers, final int angle) {
 		// creates layers of lights with the angle between each layer
 		for (int j = 0; j < layers; j++) {
 			// how much to rotate this layer counter-clockwise
@@ -42,12 +43,18 @@ public class SmoothLight {
 			final int projection = oneLayerProjection * j;
 			final int dif = 360 / circles;
 			for (int i = radialDifference; i < 360 + radialDifference; i += dif) {
-				final double x = Math.cos(Math.toRadians(i)) * projection + center.getX();
-				final double y = Math.sin(Math.toRadians(i)) * projection + center.getY();
-				final int alpha = center.getColor().getAlpha() / circles / layers;
-				final Color newColor = new Color(center.getColor().getRed(), center.getColor().getGreen(), center.getColor().getBlue(), alpha);
+				final double x = Math.cos(Math.toRadians(i)) * projection
+						+ center.getX();
+				final double y = Math.sin(Math.toRadians(i)) * projection
+						+ center.getY();
+				final int alpha = center.getColor().getAlpha() / circles
+						/ layers;
+				final Color newColor = new Color(center.getColor().getRed(),
+						center.getColor().getGreen(), center.getColor()
+								.getBlue(), alpha);
 
-				lights.add(new Light(newColor, new Vec2D(x, y), center.getRadius()));
+				lights.add(new Light(newColor, new Vec2D(x, y), center
+						.getRadius()));
 			}
 		}
 
@@ -71,26 +78,27 @@ public class SmoothLight {
 			final float minDistSq = light.getRadius() * light.getRadius();
 
 			// The area for drawing the light in
-			Area lightArea = null;
+			Area shadowArea = null;
 
 			for (int i = 0; i < entities.size(); i++) {
 				final Polygon e = entities.get(i);
 
 				final Rectangle2D bounds = e.getBounds2D();
 
-				// radius of Entity's bounding circle
-				final float r = (float) (bounds.getWidth() + bounds.getHeight()) / 4f;
+				// average to find the entity's radius
+				final float radius = (float) (bounds.getWidth() + bounds
+						.getHeight()) / 4f;
 
 				// get center of entity
-				final float cx = (float) bounds.getX() + r;
-				final float cy = (float) bounds.getY() + r;
+				final Vec2D center = new Vec2D(bounds.getX() + radius,
+						bounds.getY() + radius);
 
-				// get direction from mouse to entity center
-				final float dx = cx - light.getX();
-				final float dy = cy - light.getY();
+				final Vec2D lightToEntity = center.minus(new Vec2D(
+						light.getX(), light.getY()));
 
-				// get euclidean distance from mouse to center
-				final float distSq = dx * dx + dy * dy;
+				// get euclidean distance from light to center of the entity
+				final float distSq = (float) lightToEntity
+						.dotProduct(lightToEntity);
 
 				// if the entity is outside of the shadow radius, then ignore
 				if (distSq > minDistSq) {
@@ -98,43 +106,35 @@ public class SmoothLight {
 				}
 
 				// if A never gets set, it defaults to the center
-				Vec2D A = new Vec2D(cx, cy);
-				Vec2D B = new Vec2D(cx, cy);
+				Vec2D A = center;
+				Vec2D B = center;
 
-				// Find the farthest away vertices for which a line segment between the source and it do not intersect
-				// the
-				// polygon. Basically, a vertex with a line of sight to the light source. Store these two in A and B.
+				// Find the farthest away vertices for which a line segment
+				// between the source and it do not intersect
+				// the polygon. Basically, a vertex with a line of sight to the
+				// light source. Store these two in A and B.
 				float distSqred = 0;
 				for (int j = 0; j < e.npoints; j++) {
 					final int x = e.xpoints[j];
 					final int y = e.ypoints[j];
-					final float newDistSqred = (float) (Math.pow(x - light.getX(), 2) + Math.pow(y - light.getY(), 2));
-					if (newDistSqred > distSqred && !lineSegmentIntersects(x, y, light.getX(), light.getY(), e)) {
+					final float newDistSqred = (x - light.getX())
+							* (x - light.getX()) + (y - light.getY())
+							* (y - light.getY());
+					if (newDistSqred > distSqred
+							&& !lineSegmentIntersects(x, y, light.getX(),
+									light.getY(), e)) {
 						distSqred = newDistSqred;
+						B = A;
 						A = new Vec2D(x, y);
 
 					}
 				}
-				distSqred = 0;
-				for (int j = 0; j < e.npoints; j++) {
-					final int x = e.xpoints[j];
-					final int y = e.ypoints[j];
-					if (x == A.x && y == A.y) {
-						continue;
-					}
-
-					final float newDistSqred = (float) (Math.pow(x - light.getX(), 2) + Math.pow(y - light.getY(), 2));
-					if (newDistSqred > distSqred && !lineSegmentIntersects(x, y, light.getX(), light.getY(), e)) {
-						// check if the line between the vertex and the light
-						// intersects the polygon
-						distSqred = newDistSqred;
-						B = new Vec2D(x, y);
-					}
-				}
 
 				// project the points by our SHADOW_EXTRUDE amount
-				final Vec2D C = project(light.getX(), light.getY(), A, light.getRadius() * light.getRadius());
-				final Vec2D D = project(light.getX(), light.getY(), B, light.getRadius() * light.getRadius());
+				final Vec2D C = project(light.getX(), light.getY(), A,
+						light.getRadius() * light.getRadius());
+				final Vec2D D = project(light.getX(), light.getY(), B,
+						light.getRadius() * light.getRadius());
 
 				// construct a polygon from our points
 				POLYGON.reset();
@@ -142,31 +142,37 @@ public class SmoothLight {
 				POLYGON.addPoint((int) B.x, (int) B.y);
 				POLYGON.addPoint((int) D.x, (int) D.y);
 				POLYGON.addPoint((int) C.x, (int) C.y);
-				// area of everything but our polygon
 				final Area a = new Area(POLYGON);
 
-				// intersects with the existing light area
-				if (lightArea == null) {
-					lightArea = a;
+				// adds to the existing light area
+				if (shadowArea == null) {
+					shadowArea = a;
 				} else {
-					lightArea.add(a);
+					shadowArea.add(a);
 				}
 				if (Debug.OUTLINE_SHADOWS) {
 					g.setColor(Color.PINK);
-					g.draw(lightArea);
+					g.draw(shadowArea);
 				}
 
 			}
-			if (lightArea == null) {
+			if (shadowArea == null) {
 				// fill the polygon with the gradient
-				g.drawImage(light.image, null, (int) (light.getX() - light.getRadius()), (int) (light.getY() - light.getRadius()));
+				g.drawImage(light.image, null,
+						(int) (light.getX() - light.getRadius()),
+						(int) (light.getY() - light.getRadius()));
 			} else {
+				// get the inverse of the lightArea and set that as the clip for
+				// shadows
 				final Shape s = g.getClip();
-				final Area whole = new Area(new Rectangle2D.Float(0, 0, LightingTest.getWidth(), LightingTest.getHeight()));
-				whole.subtract(lightArea);
+				final Area lightArea = new Area(new Rectangle2D.Float(0, 0,
+						LightingTest.getWidth(), LightingTest.getHeight()));
+				lightArea.subtract(shadowArea);
 
-				g.setClip(whole);
-				g.drawImage(light.image, null, (int) (light.getX() - light.getRadius()), (int) (light.getY() - light.getRadius()));
+				g.setClip(lightArea);
+				g.drawImage(light.image, null,
+						(int) (light.getX() - light.getRadius()),
+						(int) (light.getY() - light.getRadius()));
 				g.setClip(s);
 			}
 			if (Debug.OUTLINE_LIGHTS) {
@@ -179,10 +185,12 @@ public class SmoothLight {
 		g.setPaint(oldPaint);
 	}
 
-	private boolean lineSegmentIntersects(final float x, final float y, final float x2, final float y2, final Polygon e) {
-		final int ITERATIONS = 50;
+	private static boolean lineSegmentIntersects(final float x, final float y,
+			final float x2, final float y2, final Polygon e) {
+		final int ITERATIONS = 15;
 		for (int i = 1; i < ITERATIONS; i++) {
-			if (e.contains(new Vec2D(x + (x2 - x) / ITERATIONS * i, y + (y2 - y) / ITERATIONS * i))) {
+			if (e.contains(new Vec2D(x + (x2 - x) / ITERATIONS * i, y
+					+ (y2 - y) / ITERATIONS * i))) {
 				return true;
 			}
 		}
@@ -190,26 +198,17 @@ public class SmoothLight {
 	}
 
 	/**
-	 * Projects a point from end along the vector (end - start) by the given scalar amount.
+	 * Projects a point from end along the vector (end - start) by the given
+	 * scalar amount.
 	 */
-	private Vec2D project(final float x, final float y, final Vec2D end, final float scalar) {
-		return project(x, y, (float) end.x, (float) end.y, scalar);
+	private static Vec2D project(final float x, final float y, final Vec2D end,
+			final float scalar) {
+		return project(new Vec2D(x, y), end, scalar);
 	}
 
-	private Vec2D project(final float x, final float y, final float x2, final float y2, final float scalar) {
-		float dx = x2 - x;
-		float dy = y2 - y;
-		// euclidean length
-		final float len = (float) Math.sqrt(dx * dx + dy * dy);
-		// normalize to unit vector
-		if (len != 0) { // avoid division by 0
-			dx /= len;
-			dy /= len;
-		}
-		// multiply by scalar amount
-		dx *= scalar;
-		dy *= scalar;
-		return new Vec2D(x2 + dx, y2 + dy);
+	private static Vec2D project(final Vec2D start, final Vec2D end,
+			final float scalar) {
+		return end.minus(start).unitVector().scalarMult(scalar).plus(end);
 	}
 
 	public void setPosition(final float x, final float y) {
