@@ -21,10 +21,13 @@ public class Light {
 
 	public Light(final Color c, final Vec2D position, final float radius) {
 		super();
-		image = new BufferedImage((int) radius * 2, (int) radius * 2, BufferedImage.TYPE_4BYTE_ABGR);
+		image = new BufferedImage((int) radius * 2, (int) radius * 2,
+				BufferedImage.TYPE_4BYTE_ABGR);
 
 		final Graphics2D g = (Graphics2D) image.getGraphics();
-		g.setPaint(new RadialGradientPaint(new Rectangle2D.Double(0, 0, radius * 2, radius * 2), SIZE_FRACTION, new Color[] { c, NULL_COLOR }, CycleMethod.NO_CYCLE));
+		g.setPaint(new RadialGradientPaint(new Rectangle2D.Double(0, 0,
+				radius * 2, radius * 2), SIZE_FRACTION, new Color[] { c,
+			NULL_COLOR }, CycleMethod.NO_CYCLE));
 		g.fillRect(0, 0, (int) radius * 2, (int) (radius * 2));
 
 		color = c;
@@ -51,6 +54,10 @@ public class Light {
 
 	public Color getColor() {
 		return color;
+	}
+
+	public Vec2D getPosition() {
+		return new Vec2D(x, y);
 	}
 
 }

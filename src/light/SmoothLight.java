@@ -93,8 +93,7 @@ public class SmoothLight {
 				final Vec2D center = new Vec2D(bounds.getX() + radius,
 						bounds.getY() + radius);
 
-				final Vec2D lightToEntity = center.minus(new Vec2D(
-						light.getX(), light.getY()));
+				final Vec2D lightToEntity = center.minus(light.getPosition());
 
 				// get euclidean distance from light to center of the entity
 				final float distSq = (float) lightToEntity
@@ -117,15 +116,33 @@ public class SmoothLight {
 				for (int j = 0; j < e.npoints; j++) {
 					final int x = e.xpoints[j];
 					final int y = e.ypoints[j];
-					final float newDistSqred = (x - light.getX())
-							* (x - light.getX()) + (y - light.getY())
-							* (y - light.getY());
+
+					final float newDistSqred = (float) lineToPointDistanceSqrd(
+							light.getPosition(), center, new Vec2D(x, y), false);
 					if (newDistSqred > distSqred
 							&& !lineSegmentIntersects(x, y, light.getX(),
 									light.getY(), e)) {
 						distSqred = newDistSqred;
-						B = A;
 						A = new Vec2D(x, y);
+
+					}
+				}
+				distSqred = 0;
+				for (int j = 0; j < e.npoints; j++) {
+					final int x = e.xpoints[j];
+					final int y = e.ypoints[j];
+
+					if (x == A.x && y == A.y) {
+						continue;
+					}
+
+					final float newDistSqred = (float) lineToPointDistanceSqrd(
+							light.getPosition(), center, new Vec2D(x, y), false);
+					if (newDistSqred > distSqred
+							&& !lineSegmentIntersects(x, y, light.getX(),
+									light.getY(), e)) {
+						distSqred = newDistSqred;
+						B = new Vec2D(x, y);
 
 					}
 				}
@@ -183,6 +200,27 @@ public class SmoothLight {
 
 		// reset to old Paint object
 		g.setPaint(oldPaint);
+	}
+
+	private static double lineToPointDistanceSqrd(final Vec2D pointA,
+			final Vec2D pointB, final Vec2D pointC, final boolean isSegment) {
+		if (isSegment) {
+			final double dot1 = pointB.minus(pointA).dotProduct(
+					pointC.minus(pointB));
+			if (dot1 > 0) {
+				return pointB.distanceSq(pointC);
+			}
+
+			final double dot2 = pointA.minus(pointB).dotProduct(
+					pointC.minus(pointA));
+			if (dot2 > 0) {
+				return pointA.distanceSq(pointC);
+			}
+		}
+		final double dist = pointB.minus(pointA).crossProduct(
+				pointC.minus(pointA))
+				/ pointA.distanceSq(pointB);
+		return Math.abs(dist);
 	}
 
 	private static boolean lineSegmentIntersects(final float x, final float y,

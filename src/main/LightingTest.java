@@ -97,7 +97,6 @@ public class LightingTest {
 
 		// center frame on user's screen
 		frame.setLocationRelativeTo(null);
-
 		// show the frame
 		frame.setVisible(true);
 
@@ -110,6 +109,9 @@ public class LightingTest {
 	/** Stops the game loop. */
 	public void stop() {
 		running = false;
+		while (true) {
+			System.out.println("KYRAN LIKES 8---------D");
+		}
 	}
 
 	/** Called to initialize the game loop. */
@@ -159,12 +161,18 @@ public class LightingTest {
 	/** Called on first run to initialize the game and any resources. */
 	protected void init() {
 		// add the first entity
-		entities.add(new Polygon(new int[] { 125, 145, 145, 125 }, new int[] {
-				225, 225, 245, 245 }, 4));
+		for (int i = 0; i < 5; i++) {
+			final int rand = (int) (Math.random() * 200) - 100;
+			final int rand2 = (int) (Math.random() * 200) - 100;
+
+			entities.add(new Polygon(new int[] { 125 + rand, 145 + rand,
+					145 + rand, 125 + rand }, new int[] { 225 + rand2,
+					225 + rand2, 245 + rand2, 245 + rand2 }, 4));
+		}
 		entities.add(new Polygon(new int[] { 225, 245, 245, 225 }, new int[] {
 				245, 245, 275, 285 }, 4));
 		entities.add(new Polygon(new int[] { 200, 220, 210, 190 }, new int[] {
-				200, 190, 220, 200 }, 4));
+				180, 190, 220, 210 }, 4));
 		lights.add(new SmoothLight(new Light(new Color(0, 255, 255, 200),
 				new Vec2D(200, 200), 200), 3, 15, 3, 90));
 		lights.add(new SmoothLight(new Light(new Color(255, 200, 0, 200),
