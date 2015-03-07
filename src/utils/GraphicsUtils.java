@@ -7,8 +7,6 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
-import java.awt.geom.CubicCurve2D;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
@@ -20,6 +18,8 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+
+import utils.AbstractFilter.FastBlurFilter;
 
 /**
  * The Class GraphicsUtils.
@@ -200,15 +200,15 @@ public final class GraphicsUtils {
 			for (int x = 0; x < width; x++) {
 				final int rgb1 = inPixels[index];
 				int r1 = rgb1 >> 16 & 0xff;
-				int g1 = rgb1 >> 8 & 0xff;
-				int b1 = rgb1 & 0xff;
+			int g1 = rgb1 >> 8 & 0xff;
+			int b1 = rgb1 & 0xff;
 
-				r1 = clampPixel((int) (r1 * a));
-				g1 = clampPixel((int) (g1 * a));
-				b1 = clampPixel((int) (b1 * a));
+			r1 = clampPixel((int) (r1 * a));
+			g1 = clampPixel((int) (g1 * a));
+			b1 = clampPixel((int) (b1 * a));
 
-				inPixels[index] = rgb1 & 0xff000000 | r1 << 16 | g1 << 8 | b1;
-				index++;
+			inPixels[index] = rgb1 & 0xff000000 | r1 << 16 | g1 << 8 | b1;
+			index++;
 			}
 		}
 	}
@@ -230,38 +230,20 @@ public final class GraphicsUtils {
 		return num;
 	}
 
-	/**
-	 * Draws a curve. The curve is between p1 and p2, using two control points. <br>
-	 * Both of the x values of the control points are equal to<br>
-	 * <code>Math.min(p1.getX(), p2.getX()) + Math.abs(p2.getX() - p1.getX()) / 2f;</code><br>
-	 * or halfway between the two points. The y values each correspond to the y values of the two points.
-	 *
-	 * @param g
-	 *            the g
-	 * @param p1
-	 *            the p1
-	 * @param p2
-	 *            the p2
-	 */
-	public static void drawCurve(final Graphics2D g, final Point2D p1, final Point2D p2) {
-		final CubicCurve2D curve = new CubicCurve2D.Double();
-		// right in between the two pieces on the x axis
-		final double lessX = Math.min(p1.getX(), p2.getX());
-		final double midX = lessX + Math.abs(p2.getX() - p1.getX()) / 2f;
-		curve.setCurve(p1.getX(), p1.getY(), midX, p1.getY(), midX, p2.getY(), p2.getX(), p2.getY());
-		g.draw(curve);
-	}
+	public static final AbstractFilter BLUR_FILTER = new FastBlurFilter(4);
 
 	/**
 	 * Antialiases the graphics.
 	 *
 	 * @param g
-	 *            the g
+	 *            the graphics
 	 */
 	public static void prettyGraphics(final Graphics2D g) {
 		g.addRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
 	}
 
 }

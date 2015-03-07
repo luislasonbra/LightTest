@@ -6,6 +6,7 @@ import java.awt.Paint;
 import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.Area;
+import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +34,7 @@ public class SmoothLight {
 	 * @param angle
 	 *            the angle between each layer
 	 */
-	public SmoothLight(final Light center, final int circles,
-			final int oneLayerProjection, final int layers, final int angle) {
+	public SmoothLight(final Light center, final int circles, final int oneLayerProjection, final int layers, final int angle) {
 		// creates layers of lights with the angle between each layer
 		for (int j = 0; j < layers; j++) {
 			// how much to rotate this layer counter-clockwise
@@ -43,18 +43,12 @@ public class SmoothLight {
 			final int projection = oneLayerProjection * j;
 			final int dif = 360 / circles;
 			for (int i = radialDifference; i < 360 + radialDifference; i += dif) {
-				final double x = Math.cos(Math.toRadians(i)) * projection
-						+ center.getX();
-				final double y = Math.sin(Math.toRadians(i)) * projection
-						+ center.getY();
-				final int alpha = center.getColor().getAlpha() / circles
-						/ layers;
-				final Color newColor = new Color(center.getColor().getRed(),
-						center.getColor().getGreen(), center.getColor()
-								.getBlue(), alpha);
+				final double x = Math.cos(Math.toRadians(i)) * projection + center.getX();
+				final double y = Math.sin(Math.toRadians(i)) * projection + center.getY();
+				final int alpha = center.getColor().getAlpha() / circles / layers;
+				final Color newColor = new Color(center.getColor().getRed(), center.getColor().getGreen(), center.getColor().getBlue(), alpha);
 
-				lights.add(new Light(newColor, new Vec2D(x, y), center
-						.getRadius()));
+				lights.add(new Light(newColor, new Vec2D(x, y), center.getRadius()));
 			}
 		}
 
@@ -86,18 +80,15 @@ public class SmoothLight {
 				final Rectangle2D bounds = e.getBounds2D();
 
 				// average to find the entity's radius
-				final float radius = (float) (bounds.getWidth() + bounds
-						.getHeight()) / 4f;
+				final float radius = (float) (bounds.getWidth() + bounds.getHeight()) / 4f;
 
 				// get center of entity
-				final Vec2D center = new Vec2D(bounds.getX() + radius,
-						bounds.getY() + radius);
+				final Vec2D center = new Vec2D(bounds.getX() + radius, bounds.getY() + radius);
 
 				final Vec2D lightToEntity = center.minus(light.getPosition());
 
 				// get euclidean distance from light to center of the entity
-				final float distSq = (float) lightToEntity
-						.dotProduct(lightToEntity);
+				final float distSq = (float) lightToEntity.distanceSq(lightToEntity);
 
 				// if the entity is outside of the shadow radius, then ignore
 				if (distSq > minDistSq) {
@@ -112,46 +103,26 @@ public class SmoothLight {
 				// between the source and it do not intersect
 				// the polygon. Basically, a vertex with a line of sight to the
 				// light source. Store these two in A and B.
-				float distSqred = 0;
+				float maxAdistSq = 0;
+				float maxBdistSq = 0;
 				for (int j = 0; j < e.npoints; j++) {
 					final int x = e.xpoints[j];
 					final int y = e.ypoints[j];
 
-					final float newDistSqred = (float) lineToPointDistanceSqrd(
-							light.getPosition(), center, new Vec2D(x, y), false);
-					if (newDistSqred > distSqred
-							&& !lineSegmentIntersects(x, y, light.getX(),
-									light.getY(), e)) {
-						distSqred = newDistSqred;
+					final float newDistSqred = (float) Line2D.ptLineDistSq(light.getX(), light.getY(), center.x, center.y, x, y);
+
+					if (maxAdistSq < newDistSqred && isLeft(light.getPosition(), center, new Vec2D(x, y))) {
+						maxAdistSq = newDistSqred;
 						A = new Vec2D(x, y);
-
 					}
-				}
-				distSqred = 0;
-				for (int j = 0; j < e.npoints; j++) {
-					final int x = e.xpoints[j];
-					final int y = e.ypoints[j];
-
-					if (x == A.x && y == A.y) {
-						continue;
-					}
-
-					final float newDistSqred = (float) lineToPointDistanceSqrd(
-							light.getPosition(), center, new Vec2D(x, y), false);
-					if (newDistSqred > distSqred
-							&& !lineSegmentIntersects(x, y, light.getX(),
-									light.getY(), e)) {
-						distSqred = newDistSqred;
+					if (maxBdistSq < newDistSqred && !isLeft(light.getPosition(), center, new Vec2D(x, y))) {
+						maxBdistSq = newDistSqred;
 						B = new Vec2D(x, y);
-
 					}
 				}
-
 				// project the points by our SHADOW_EXTRUDE amount
-				final Vec2D C = project(light.getX(), light.getY(), A,
-						light.getRadius() * light.getRadius());
-				final Vec2D D = project(light.getX(), light.getY(), B,
-						light.getRadius() * light.getRadius());
+				final Vec2D C = project(light.getX(), light.getY(), A, light.getRadius() * light.getRadius());
+				final Vec2D D = project(light.getX(), light.getY(), B, light.getRadius() * light.getRadius());
 
 				// construct a polygon from our points
 				POLYGON.reset();
@@ -175,21 +146,18 @@ public class SmoothLight {
 			}
 			if (shadowArea == null) {
 				// fill the polygon with the gradient
-				g.drawImage(light.image, null,
-						(int) (light.getX() - light.getRadius()),
-						(int) (light.getY() - light.getRadius()));
+				g.drawImage(light.image, null, (int) (light.getX() - light.getRadius()), (int) (light.getY() - light.getRadius()));
 			} else {
 				// get the inverse of the lightArea and set that as the clip for
 				// shadows
 				final Shape s = g.getClip();
-				final Area lightArea = new Area(new Rectangle2D.Float(0, 0,
-						LightingTest.getWidth(), LightingTest.getHeight()));
-				lightArea.subtract(shadowArea);
 
+				final Area lightArea = new Area(new Rectangle2D.Float(0, 0, LightingTest.getWidth(), LightingTest.getHeight()));
+				lightArea.subtract(shadowArea);
 				g.setClip(lightArea);
-				g.drawImage(light.image, null,
-						(int) (light.getX() - light.getRadius()),
-						(int) (light.getY() - light.getRadius()));
+
+				g.drawImage(light.image, null, (int) (light.getX() - light.getRadius()), (int) (light.getY() - light.getRadius()));
+
 				g.setClip(s);
 			}
 			if (Debug.OUTLINE_LIGHTS) {
@@ -202,50 +170,29 @@ public class SmoothLight {
 		g.setPaint(oldPaint);
 	}
 
-	private static double lineToPointDistanceSqrd(final Vec2D pointA,
-			final Vec2D pointB, final Vec2D pointC, final boolean isSegment) {
-		if (isSegment) {
-			final double dot1 = pointB.minus(pointA).dotProduct(
-					pointC.minus(pointB));
-			if (dot1 > 0) {
-				return pointB.distanceSq(pointC);
-			}
-
-			final double dot2 = pointA.minus(pointB).dotProduct(
-					pointC.minus(pointA));
-			if (dot2 > 0) {
-				return pointA.distanceSq(pointC);
-			}
-		}
-		final double dist = pointB.minus(pointA).crossProduct(
-				pointC.minus(pointA))
-				/ pointA.distanceSq(pointB);
-		return Math.abs(dist);
-	}
-
-	private static boolean lineSegmentIntersects(final float x, final float y,
-			final float x2, final float y2, final Polygon e) {
-		final int ITERATIONS = 15;
-		for (int i = 1; i < ITERATIONS; i++) {
-			if (e.contains(new Vec2D(x + (x2 - x) / ITERATIONS * i, y
-					+ (y2 - y) / ITERATIONS * i))) {
-				return true;
-			}
-		}
-		return false;
+	/**
+	 * Determines whether point c is on the left of the line between a and b
+	 *
+	 * @param a
+	 *            point 1 of line AB
+	 * @param b
+	 *            point 2 of line AB
+	 * @param c
+	 *            the point to check
+	 * @return whether point C is on the left of line AB. Returns false if the point is on the line.
+	 */
+	public static boolean isLeft(final Vec2D a, final Vec2D b, final Vec2D c) {
+		return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
 	}
 
 	/**
-	 * Projects a point from end along the vector (end - start) by the given
-	 * scalar amount.
+	 * Projects a point from end along the vector (end - start) by the given scalar amount.
 	 */
-	private static Vec2D project(final float x, final float y, final Vec2D end,
-			final float scalar) {
+	private static Vec2D project(final float x, final float y, final Vec2D end, final float scalar) {
 		return project(new Vec2D(x, y), end, scalar);
 	}
 
-	private static Vec2D project(final Vec2D start, final Vec2D end,
-			final float scalar) {
+	private static Vec2D project(final Vec2D start, final Vec2D end, final float scalar) {
 		return end.minus(start).unitVector().scalarMult(scalar).plus(end);
 	}
 

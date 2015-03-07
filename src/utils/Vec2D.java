@@ -3,12 +3,13 @@ package utils;
 import java.awt.geom.Point2D;
 
 /**
- * An extension to the relatively impotent java.awt.geom.Point2D.Double,
- * Vector2D allows mathematical manipulation of 2-component vectors.
+ * An extension to the relatively impotent java.awt.geom.Point2D.Double, Vector2D allows mathematical manipulation of
+ * 2-component vectors.
  *
  * @author Jadrian Miles
  * @version 20031122
  */
+@SuppressWarnings("serial")
 public class Vec2D extends Point2D.Double {
 
 	/*
@@ -45,8 +46,7 @@ public class Vec2D extends Point2D.Double {
 	}
 
 	/**
-	 * @return the angle (argument) of the vector in polar coordinates in the
-	 *         range [-pi/2, pi/2]
+	 * @return the angle (argument) of the vector in polar coordinates in the range [-pi/2, pi/2]
 	 */
 	public double getTheta() {
 		return Math.atan2(y, x);
@@ -95,10 +95,6 @@ public class Vec2D extends Point2D.Double {
 		return new Vec2D(x - rhs.x, y - rhs.y);
 	}
 
-	public boolean equals(final Vec2D rhs) {
-		return x == rhs.x && y == rhs.y;
-	}
-
 	/** Product of the vector and scalar */
 	public Vec2D scalarMult(final double scalar) {
 		return new Vec2D(scalar * x, scalar * y);
@@ -110,9 +106,8 @@ public class Vec2D extends Point2D.Double {
 	}
 
 	/**
-	 * Since Vector2D works only in the x-y plane, (u x v) points directly along
-	 * the z axis. This function returns the value on the z axis that (u x v)
-	 * reaches.
+	 * Since Vector2D works only in the x-y plane, (u x v) points directly along the z axis. This function returns the
+	 * value on the z axis that (u x v) reaches.
 	 *
 	 * @return signed magnitude of (this x rhs)
 	 */
@@ -140,9 +135,8 @@ public class Vec2D extends Point2D.Double {
 	}
 
 	/**
-	 * Returns a new vector with the same direction as the vector but with
-	 * length 1, except in the case of zero vectors, which return a copy of
-	 * themselves.
+	 * Returns a new vector with the same direction as the vector but with length 1, except in the case of zero vectors,
+	 * which return a copy of themselves.
 	 */
 	public Vec2D unitVector() {
 		if (!(x == 0 && y == 0)) {
@@ -169,6 +163,12 @@ public class Vec2D extends Point2D.Double {
 		return "<" + x + ", " + y + ">";
 	}
 
+	/**
+	 * Fast inverse square root. Returns approximately 1/sqrt(x).
+	 *
+	 * @param x
+	 * @return 1/sqrt(x)
+	 */
 	public static float invSqrt(float x) {
 		final float xhalf = 0.5f * x;
 		int i = java.lang.Float.floatToIntBits(x);

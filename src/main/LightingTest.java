@@ -16,6 +16,7 @@ import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javax.swing.JFrame;
 
@@ -46,8 +47,7 @@ public class LightingTest {
 	/** The buffer strategy used for smooth active rendering. */
 	protected BufferStrategy strategy;
 
-	protected BufferedImage lightmap = GraphicsUtils.createImage(getWidth(),
-			getHeight(), Transparency.TRANSLUCENT);
+	protected BufferedImage lightmap = GraphicsUtils.createImage(getWidth(), getHeight(), Transparency.TRANSLUCENT);
 
 	/** True if the game loop is running. */
 	protected boolean running;
@@ -66,8 +66,7 @@ public class LightingTest {
 	protected JFrame frame = new JFrame("Shooter Game");
 
 	/**
-	 * Constructs a new Game object; run() should be called to start the
-	 * rendering.
+	 * Constructs a new Game object; run() should be called to start the rendering.
 	 */
 	public LightingTest() {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -132,8 +131,7 @@ public class LightingTest {
 			// pretty standard buffer strategy game loop
 			do {
 				do {
-					final Graphics2D g = (Graphics2D) strategy
-							.getDrawGraphics();
+					final Graphics2D g = (Graphics2D) strategy.getDrawGraphics();
 					// clear screen
 					g.setColor(Color.white);
 					g.clearRect(0, 0, width, height);
@@ -161,22 +159,17 @@ public class LightingTest {
 	/** Called on first run to initialize the game and any resources. */
 	protected void init() {
 		// add the first entity
+		final Random rand = new Random();
 		for (int i = 0; i < 5; i++) {
-			final int rand = (int) (Math.random() * 200) - 100;
-			final int rand2 = (int) (Math.random() * 200) - 100;
+			final int rand1 = rand.nextInt(200) - 100;
+			final int rand2 = rand.nextInt(200) - 100;
 
-			entities.add(new Polygon(new int[] { 125 + rand, 145 + rand,
-					145 + rand, 125 + rand }, new int[] { 225 + rand2,
-					225 + rand2, 245 + rand2, 245 + rand2 }, 4));
+			entities.add(new Polygon(new int[] { 125 + rand1, 145 + rand1, 145 + rand1, 125 + rand1 }, new int[] { 225 + rand2, 225 + rand2, 245 + rand2, 245 + rand2 }, 4));
 		}
-		entities.add(new Polygon(new int[] { 225, 245, 245, 225 }, new int[] {
-				245, 245, 275, 285 }, 4));
-		entities.add(new Polygon(new int[] { 200, 220, 210, 190 }, new int[] {
-				180, 190, 220, 210 }, 4));
-		lights.add(new SmoothLight(new Light(new Color(0, 255, 255, 200),
-				new Vec2D(200, 200), 200), 3, 15, 3, 90));
-		lights.add(new SmoothLight(new Light(new Color(255, 200, 0, 200),
-				new Vec2D(250, 200), 200), 3, 15, 3, 90));
+		entities.add(new Polygon(new int[] { 225, 245, 245, 225 }, new int[] { 245, 245, 275, 285 }, 4));
+		entities.add(new Polygon(new int[] { 200, 220, 210, 190 }, new int[] { 180, 190, 220, 210 }, 4));
+		lights.add(new SmoothLight(new Light(new Color(0, 255, 255, 200), new Vec2D(200, 200), 300), 2, 3, 5, 90));
+		lights.add(new SmoothLight(new Light(new Color(255, 200, 0, 200), new Vec2D(250, 200), 200), 2, 3, 5, 90));
 	}
 
 	/** Updates the game's entities. */
@@ -201,7 +194,8 @@ public class LightingTest {
 		}
 		lightGraphics.dispose();
 		GraphicsUtils.glowFilter(lightmap, 0.2f);
-		g.drawImage(lightmap, null, 0, 0);
+
+		g.drawImage(lightmap, GraphicsUtils.BLUR_FILTER, 0, 0);
 
 		// render each entity
 		for (int i = 0; i < entities.size(); i++) {
