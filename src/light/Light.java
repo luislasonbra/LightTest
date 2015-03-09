@@ -23,10 +23,13 @@ public class Light {
 
 	public Light(final Color c, final Vec2D position, final float radius) {
 		super();
-		image = GraphicsUtils.createImage((int) radius * 2, (int) radius * 2, Transparency.TRANSLUCENT);
+		image = GraphicsUtils.createImage((int) radius * 2, (int) radius * 2,
+				Transparency.TRANSLUCENT);
 
 		final Graphics2D g = (Graphics2D) image.getGraphics();
-		g.setPaint(new RadialGradientPaint(new Rectangle2D.Double(0, 0, radius * 2, radius * 2), SIZE_FRACTION, new Color[] { c, NULL_COLOR }, CycleMethod.NO_CYCLE));
+		g.setPaint(new RadialGradientPaint(new Rectangle2D.Double(0, 0,
+				radius * 2, radius * 2), SIZE_FRACTION, new Color[] { c,
+				NULL_COLOR }, CycleMethod.NO_CYCLE));
 		g.fillRect(0, 0, (int) radius * 2, (int) (radius * 2));
 
 		color = c;
@@ -57,6 +60,48 @@ public class Light {
 
 	public Vec2D getPosition() {
 		return new Vec2D(x, y);
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (color == null ? 0 : color.hashCode());
+		result = prime * result + Float.floatToIntBits(radius);
+		result = prime * result + Float.floatToIntBits(x);
+		result = prime * result + Float.floatToIntBits(y);
+		return result;
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final Light other = (Light) obj;
+		if (color == null) {
+			if (other.color != null) {
+				return false;
+			}
+		} else if (!color.equals(other.color)) {
+			return false;
+		}
+		if (Float.floatToIntBits(radius) != Float.floatToIntBits(other.radius)) {
+			return false;
+		}
+		if (Float.floatToIntBits(x) != Float.floatToIntBits(other.x)) {
+			return false;
+		}
+		if (Float.floatToIntBits(y) != Float.floatToIntBits(other.y)) {
+			return false;
+		}
+		return true;
 	}
 
 }
