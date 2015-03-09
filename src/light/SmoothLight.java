@@ -2,10 +2,10 @@ package light;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Paint;
 import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -20,6 +20,11 @@ public class SmoothLight {
 	protected final static Polygon POLYGON = new Polygon();
 
 	protected final List<Light> lights = new ArrayList<>();
+	protected final List<Area> lightAreas = new ArrayList<>();
+
+	private List<Polygon> lastEntities;
+
+	private boolean hasMoved;
 
 	/**
 	 *
@@ -55,6 +60,7 @@ public class SmoothLight {
 						+ center.getY();
 				lights.add(new Light(newColor, new Vec2D(x, y), center
 						.getRadius()));
+				lightAreas.add(new Area());
 			}
 		}
 
@@ -63,16 +69,89 @@ public class SmoothLight {
 	/**
 	 * @param g
 	 *            the graphics to use for rendering
-	 * @param entities
-	 *            the list of entities to take into account when drawing shadows
 	 * @throws Exception
 	 */
-	public void draw(final Graphics2D g, final List<Polygon> entities) {
-		// old Paint object for resetting it later
-		final Paint oldPaint = g.getPaint();
-		// amount to extrude our shadow polygon by
+	public void draw(final Graphics2D g) {
 
-		for (final Light light : lights) {
+		for (int i = 0; i < lights.size(); i++) {
+			final Light light = lights.get(i);
+			final Area lightArea = lightAreas.get(i);
+
+			if (lightArea == null) {
+				// fill the polygon with the gradient
+				g.drawImage(light.image, null,
+						(int) (light.getX() - light.getRadius()),
+						(int) (light.getY() - light.getRadius()));
+			} else {
+				// get the inverse of the lightArea and set that as the clip for
+				// shadows
+				final Shape s = g.getClip();
+
+				g.setClip(new GeneralPath(lightArea));
+				if (Constants.OUTLINE_SHADOWS) {
+					g.setColor(Color.PINK);
+					g.draw(lightArea);
+				}
+				g.drawImage(light.image, null,
+						(int) (light.getX() - light.getRadius()),
+						(int) (light.getY() - light.getRadius()));
+
+				g.setClip(s);
+			}
+			if (Constants.OUTLINE_LIGHTS) {
+				g.setColor(Color.PINK);
+				g.drawOval((int) light.getX() - 2, (int) light.getY() - 2, 4, 4);
+			}
+
+		}
+	}
+
+	/**
+	 * Determines whether point c is on the left of the line between a and b
+	 *
+	 * @param a
+	 *            point 1 of line AB
+	 * @param b
+	 *            point 2 of line AB
+	 * @param c
+	 *            the point to check
+	 * @return whether point C is on the left of line AB. Returns false if the
+	 *         point is on the line.
+	 */
+	public static boolean isLeft(final Vec2D a, final Vec2D b, final Vec2D c) {
+		return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
+	}
+
+	/**
+	 * Projects a point from end along the vector (end - start) by the given
+	 * scalar amount.
+	 */
+	private static Vec2D project(final Vec2D start, final Vec2D end,
+			final float scalar) {
+		return end.minus(start).unitVector().scalarMult(scalar).plus(end);
+	}
+
+	public void setPosition(final float x, final float y) {
+		final float differenceX = x - lights.get(0).getX();
+		final float differenceY = y - lights.get(0).getY();
+
+		if (differenceX != 0 || differenceY != 0) {
+			hasMoved = true;
+		}
+
+		for (final Light l : lights) {
+			l.setPosition(l.getX() + differenceX, l.getY() + differenceY);
+		}
+	}
+
+	public void cut(final List<Polygon> entities) {
+		if (entities.equals(lastEntities) && !hasMoved) {
+			return;
+		}
+
+		for (int z = 0; z < lights.size(); z++) {
+
+			final Light light = lights.get(z);
 
 			// minimum distance (squared) which will save us some checks
 			final float minDistSq = light.getRadius() * light.getRadius();
@@ -155,73 +234,16 @@ public class SmoothLight {
 				} else {
 					shadowArea.add(a);
 				}
-				if (Constants.OUTLINE_SHADOWS) {
-					g.setColor(Color.PINK);
-					g.draw(shadowArea);
-				}
 
 			}
-			if (shadowArea == null) {
-				// fill the polygon with the gradient
-				g.drawImage(light.image, null,
-						(int) (light.getX() - light.getRadius()),
-						(int) (light.getY() - light.getRadius()));
-			} else {
-				// get the inverse of the lightArea and set that as the clip for
-				// shadows
-				final Shape s = g.getClip();
 
-				final Area lightArea = new Area(new Rectangle2D.Float(0, 0,
-						LightingTest.getWidth(), LightingTest.getHeight()));
-				lightArea.subtract(shadowArea);
-				g.setClip(lightArea);
+			final Area lightArea = new Area(new Rectangle2D.Float(0, 0,
+					LightingTest.getWidth(), LightingTest.getHeight()));
+			lightArea.subtract(shadowArea);
+			lightAreas.set(z, lightArea);
 
-				g.drawImage(light.image, null,
-						(int) (light.getX() - light.getRadius()),
-						(int) (light.getY() - light.getRadius()));
-
-				g.setClip(s);
-			}
-			if (Constants.OUTLINE_LIGHTS) {
-				g.setColor(Color.PINK);
-				g.drawOval((int) light.getX() - 2, (int) light.getY() - 2, 4, 4);
-			}
 		}
-
-		// reset to old Paint object
-		g.setPaint(oldPaint);
-	}
-
-	/**
-	 * Determines whether point c is on the left of the line between a and b
-	 *
-	 * @param a
-	 *            point 1 of line AB
-	 * @param b
-	 *            point 2 of line AB
-	 * @param c
-	 *            the point to check
-	 * @return whether point C is on the left of line AB. Returns false if the
-	 *         point is on the line.
-	 */
-	public static boolean isLeft(final Vec2D a, final Vec2D b, final Vec2D c) {
-		return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
-	}
-
-	/**
-	 * Projects a point from end along the vector (end - start) by the given
-	 * scalar amount.
-	 */
-	private static Vec2D project(final Vec2D start, final Vec2D end,
-			final float scalar) {
-		return end.minus(start).unitVector().scalarMult(scalar).plus(end);
-	}
-
-	public void setPosition(final float x, final float y) {
-		final float differenceX = x - lights.get(0).getX();
-		final float differenceY = y - lights.get(0).getY();
-		for (final Light l : lights) {
-			l.setPosition(l.getX() + differenceX, l.getY() + differenceY);
-		}
+		lastEntities = entities;
+		hasMoved = false;
 	}
 }

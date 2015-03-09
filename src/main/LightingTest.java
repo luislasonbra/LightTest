@@ -201,8 +201,10 @@ public class LightingTest {
 
 		// render the shadows first
 		for (final SmoothLight l : lights) {
-			l.draw(lightGraphics, entities);
+			l.cut(entities);
+			l.draw(lightGraphics);
 		}
+
 		lightGraphics.dispose();
 
 		if (Constants.GLOW) {

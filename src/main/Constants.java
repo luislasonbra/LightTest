@@ -1,7 +1,7 @@
 package main;
 
 public final class Constants {
-	public static final boolean OUTLINE_LIGHTS = true;
+	public static final boolean OUTLINE_LIGHTS = false;
 	public static final boolean OUTLINE_SHADOWS = false;
 
 	public static final boolean BLUR = true;

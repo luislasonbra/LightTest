@@ -35,6 +35,9 @@ public final class GraphicsUtils {
 			.getLocalGraphicsEnvironment().getDefaultScreenDevice()
 			.getDefaultConfiguration();
 
+	public static final AbstractFilter BLUR_FILTER = new FastBlurFilter(
+			Constants.BLUR_AMOUNT);
+
 	// Utility class, cannot instantiate
 	private GraphicsUtils() {
 	}
@@ -219,15 +222,15 @@ public final class GraphicsUtils {
 			for (int x = 0; x < width; x++) {
 				final int rgb1 = inPixels[index];
 				int r1 = rgb1 >> 16 & 0xff;
-				int g1 = rgb1 >> 8 & 0xff;
-				int b1 = rgb1 & 0xff;
+			int g1 = rgb1 >> 8 & 0xff;
+			int b1 = rgb1 & 0xff;
 
-				r1 = clampPixel((int) (r1 * a));
-				g1 = clampPixel((int) (g1 * a));
-				b1 = clampPixel((int) (b1 * a));
+			r1 = clampPixel((int) (r1 * a));
+			g1 = clampPixel((int) (g1 * a));
+			b1 = clampPixel((int) (b1 * a));
 
-				inPixels[index] = rgb1 & 0xff000000 | r1 << 16 | g1 << 8 | b1;
-				index++;
+			inPixels[index] = rgb1 & 0xff000000 | r1 << 16 | g1 << 8 | b1;
+			index++;
 			}
 		}
 	}
@@ -248,9 +251,6 @@ public final class GraphicsUtils {
 		}
 		return num;
 	}
-
-	public static final AbstractFilter BLUR_FILTER = new FastBlurFilter(
-			Constants.BLUR_AMOUNT);
 
 	/**
 	 * Antialiases the graphics.
