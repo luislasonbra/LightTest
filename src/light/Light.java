@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.MultipleGradientPaint.CycleMethod;
 import java.awt.RadialGradientPaint;
-import java.awt.Transparency;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
@@ -23,13 +22,10 @@ public class Light {
 
 	public Light(final Color c, final Vec2D position, final float radius) {
 		super();
-		image = GraphicsUtils.createImage((int) radius * 2, (int) radius * 2,
-				Transparency.TRANSLUCENT);
+		image = GraphicsUtils.toCompatibleImage(new BufferedImage((int) radius * 2, (int) radius * 2, BufferedImage.TYPE_INT_ARGB));
 
 		final Graphics2D g = (Graphics2D) image.getGraphics();
-		g.setPaint(new RadialGradientPaint(new Rectangle2D.Double(0, 0,
-				radius * 2, radius * 2), SIZE_FRACTION, new Color[] { c,
-				NULL_COLOR }, CycleMethod.NO_CYCLE));
+		g.setPaint(new RadialGradientPaint(new Rectangle2D.Double(0, 0, radius * 2, radius * 2), SIZE_FRACTION, new Color[] { c, NULL_COLOR }, CycleMethod.NO_CYCLE));
 		g.fillRect(0, 0, (int) radius * 2, (int) (radius * 2));
 
 		color = c;
